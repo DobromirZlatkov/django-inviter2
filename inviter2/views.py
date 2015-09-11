@@ -12,6 +12,7 @@ from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.utils import importlib
 from django.utils.http import base36_to_int
 from django.views.generic.base import TemplateView
+from django.contrib.auth import login
 
 from .forms import OptOutForm
 
@@ -28,7 +29,8 @@ INVITER_OPTOUT_DONE_TEMPLATE = getattr(
     settings, 'INVITER_OPTOUT_DONE_TEMPLATE', 'inviter2/opt-out-done.html')
 TOKEN_GENERATOR = getattr(
     settings, 'INVITER_TOKEN_GENERATOR', 'inviter2.tokens.generator')
-
+LOGIN_AFTER_REGISTRATION = getattr(
+    settings, 'LOGIN_AFTER_REGISTRATION', True)
 
 def import_attribute(path):
     """
@@ -109,6 +111,11 @@ class Register(UserMixin, TemplateView):
 
         if form.is_valid():
             form.save()
+
+            if LOGIN_AFTER_REGISTRATION:
+                user.backend = 'django.contrib.auth.backends.ModelBackend'
+                login(request, user)
+
             try:
                 return HttpResponseRedirect(reverse(self.redirect_url))
             except:
